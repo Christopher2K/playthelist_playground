@@ -1,0 +1,2 @@
+pub const AM_DEV_TOKEN: &str = "<YOUR APPLE MUSIC DEV TOKEN>";
+pub const AM_USER_TOKEN: &str = "<YOUR APPLE MUSIC USER TOKEN>";

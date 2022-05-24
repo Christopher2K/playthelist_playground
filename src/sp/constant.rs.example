@@ -1,0 +1,1 @@
+pub const SP_USER_TOKEN: &str = "<YOUR SPOTIFY USER TOKEN>";
