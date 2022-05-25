@@ -7,6 +7,8 @@ use urlencoding::encode;
 use common::SpotifyErrorResponse;
 use response::*;
 
+use self::model::Track;
+
 pub mod common;
 pub mod constant;
 pub mod model;
@@ -133,5 +135,54 @@ impl SpotifyAPI {
                 client.post(&url).headers(headers).json(&data).send()
             })
             .collect::<_>()
+    }
+
+    pub fn get_user_playlists(
+        &self,
+        user_id: &str,
+    ) -> Result<SpotifyUserPlaylistsResponse, reqwest::Error> {
+        let url = format!("{}/users/{}/playlists", Self::BASE_URL, user_id);
+
+        let client = Client::new();
+        let headers = self.get_base_headers();
+
+        client
+            .get(url)
+            .headers(headers)
+            .send()
+            .and_then(|response| response.json::<SpotifyUserPlaylistsResponse>())
+    }
+
+    pub fn get_user_playlist_tracks(
+        &self,
+        playlist_id: &str,
+        mut tracks: Vec<SpotifyPlaylistTracksResponse>,
+        next: Option<String>,
+    ) -> Result<Vec<SpotifyPlaylistTracksResponse>, reqwest::Error> {
+        let url = next.unwrap_or_else(|| {
+            String::from(format!(
+                "{}/playlists/{}/tracks",
+                Self::BASE_URL,
+                playlist_id
+            ))
+        });
+
+        let client = Client::new();
+        let headers = self.get_base_headers();
+
+        client
+            .get(url)
+            .headers(headers)
+            .send()
+            .and_then(|response| response.json::<SpotifyPlaylistTracksResponse>())
+            .and_then(|response| {
+                let next_url = response.next.clone();
+                tracks.push(response);
+
+                match next_url {
+                    Some(x) => self.get_user_playlist_tracks(playlist_id, tracks, Some(x)),
+                    None => Ok(tracks),
+                }
+            })
     }
 }

@@ -8,3 +8,4 @@ pub type LibraryPlaylistsResponse =
 pub type LibrarySongsResponse = AppleCollectionResponse<
     AppleApiObjectWithRelationship<LibrarySongAttribute, CatalogRelationship>,
 >;
+pub type SongsResponse = AppleCollectionResponse<AppleApiObject<SongAttribute>>;

@@ -5,6 +5,7 @@ use reqwest::header::{HeaderMap, HeaderName, AUTHORIZATION};
 use response::*;
 use std::collections::HashMap;
 use std::str::FromStr;
+use urlencoding::encode;
 
 pub mod common;
 pub mod constant;
@@ -84,6 +85,33 @@ impl AppleMusicAPI {
                     None => Ok(responses),
                 }
             })
+    }
+
+    pub fn search_track(
+        &self,
+        storefront_name: &str,
+        isrc: &str,
+    ) -> Result<SongsResponse, reqwest::Error> {
+        let params = format!("filter[isrc]={}", isrc);
+        let url = format!(
+            "{}/catalog/{}/songs?{}",
+            Self::BASE_URL,
+            storefront_name,
+            params
+        );
+
+        let client = Client::new();
+        let headers = self.get_base_headers();
+
+        client
+            .get(url)
+            .headers(headers)
+            .send()
+            .and_then(|response| response.json())
+    }
+
+    pub fn create_new_playlist(name: &str) -> Result<&str, reqwest::Error> {
+        todo!();
     }
 
     // PRIVATE STUFFS

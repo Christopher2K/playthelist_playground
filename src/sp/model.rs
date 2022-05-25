@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ExternalIds {
-    isrc: String,
+    pub isrc: String,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -21,7 +21,7 @@ pub enum AlbumType {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct SearchTrackItem {
+pub struct Track {
     pub id: String,
     pub name: String,
     pub uri: String,
@@ -31,11 +31,17 @@ pub struct SearchTrackItem {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct SearchTrackItems {
-    pub items: Vec<SearchTrackItem>,
+    pub items: Vec<Track>,
 }
 
-//
-//
-// RESPONSES
-//
-//
+#[derive(Deserialize, Serialize, Debug)]
+pub struct UserPlaylist {
+    pub collaborative: bool,
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PlaylistTrackItem {
+    pub track: Track,
+}

@@ -1,16 +1,18 @@
 use am::{
+    common::AppleApiObject,
     constant::{AM_DEV_TOKEN, AM_USER_TOKEN},
     domain::AMPlaylistTrack,
+    model::SongAttribute,
     AppleMusicAPI,
 };
 use sp::{constant::SP_USER_TOKEN, SearchTrackArgument, SearchTrackInfo, SpotifyAPI};
 
-use crate::sp::model::SearchTrackItem;
+use crate::sp::model::Track;
 
 mod am;
 mod sp;
 
-fn main() {
+fn from_am_to_sp() {
     let am_api = AppleMusicAPI::new(AM_USER_TOKEN, AM_DEV_TOKEN);
     let sp_api = SpotifyAPI::new(SP_USER_TOKEN);
 
@@ -82,7 +84,7 @@ fn main() {
                 }
             }
         })
-        .collect::<Vec<Option<SearchTrackItem>>>();
+        .collect::<Vec<Option<Track>>>();
 
     let spotify_tracks_uri = spotify_tracks
         .iter()
@@ -107,4 +109,58 @@ fn main() {
         }
         Err(err) => println!("Add track error: {:?}", err),
     }
+}
+
+fn from_sp_to_am() {
+    let sp_api = SpotifyAPI::new(SP_USER_TOKEN);
+    let am_api = AppleMusicAPI::new(AM_USER_TOKEN, AM_DEV_TOKEN);
+
+    let storefront = am_api.get_user_storefront().unwrap();
+    let user_profile = sp_api.get_user_profile().unwrap();
+    let user_playlists = sp_api.get_user_playlists(&user_profile.id).unwrap();
+    let playlist_of_interest = &user_playlists.items[0];
+
+    let am_songs = sp_api
+        .get_user_playlist_tracks(&playlist_of_interest.id, vec![], None)
+        .map(|tracks_collection| {
+            tracks_collection
+                .iter()
+                .flat_map(|tracks| {
+                    tracks
+                        .items
+                        .iter()
+                        .map(|item| item.track.clone())
+                        .collect::<Vec<sp::model::Track>>()
+                })
+                .filter_map(|t| {
+                    println!("====> Looking for {} in Apple Music catalog", &t.name);
+                    match am_api.search_track(&storefront.data[0].id, &t.external_ids.isrc) {
+                        Ok(result) => {
+                            if result.data.len() == 0 {
+                                println!("Cannot find a match for this song");
+                                None
+                            } else {
+                                println!("Match found: {}", result.data.len());
+                                Some(result.data[0].clone())
+                            }
+                        }
+                        Err(e) => {
+                            println!("Error when looking for this track {:?}", e);
+                            None
+                        }
+                    }
+                })
+                .collect::<Vec<AppleApiObject<SongAttribute>>>()
+        });
+
+    match am_songs {
+        Ok(x) => println!("Found {} songs in Apple Catalog!", x.len()),
+        _ => (),
+    }
+    // TODO: CREATE APPLE MUSIC PLAYLIST WITH NAME AND SONGS IN THE SAME CALL
+}
+
+fn main() {
+    // from_am_to_sp()
+    from_sp_to_am()
 }

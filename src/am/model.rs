@@ -1,8 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct SongAttribute {
     pub isrc: String,
+    pub album_name: String,
+    pub artist_name: String,
+    pub name: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
