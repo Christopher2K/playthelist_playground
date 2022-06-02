@@ -20,3 +20,9 @@ pub struct AppleCollectionResponse<T> {
     pub data: Vec<T>,
     pub next: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AppleRequest<A, R> {
+    pub attributes: A,
+    pub relationships: Option<R>,
+}

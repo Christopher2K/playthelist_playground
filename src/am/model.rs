@@ -36,3 +36,37 @@ pub struct LibrarySongAttribute {
     pub album_name: Option<String>,
     pub artwork: TrackArtwork,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LibraryPlaylistCreationAttributes {
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LibraryPlaylistCreationRelationships {
+    pub tracks: LibraryPlaylistCreationTracks,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LibraryPlaylistCreationTracks {
+    pub data: Vec<LibraryPlaylistCreationTrack>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LibraryPlaylistCreationTrack {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub track_type: LibraryTrackType,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum LibraryTrackType {
+    #[serde(rename = "library-music-videos")]
+    LibraryMusicVideos,
+    #[serde(rename = "library-songs")]
+    LibrarySongs,
+    #[serde(rename = "music-videos")]
+    MusicVideos,
+    #[serde(rename = "songs")]
+    Songs,
+}

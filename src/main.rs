@@ -118,7 +118,7 @@ fn from_sp_to_am() {
     let storefront = am_api.get_user_storefront().unwrap();
     let user_profile = sp_api.get_user_profile().unwrap();
     let user_playlists = sp_api.get_user_playlists(&user_profile.id).unwrap();
-    let playlist_of_interest = &user_playlists.items[0];
+    let playlist_of_interest = &user_playlists.items[1];
 
     let am_songs = sp_api
         .get_user_playlist_tracks(&playlist_of_interest.id, vec![], None)
@@ -154,10 +154,21 @@ fn from_sp_to_am() {
         });
 
     match am_songs {
-        Ok(x) => println!("Found {} songs in Apple Catalog!", x.len()),
+        Ok(x) => {
+            println!("Found {} songs in Apple Catalog!", x.len());
+            let creation_response = am_api
+                .create_new_playlist(
+                    &playlist_of_interest.name,
+                    x.iter().map(|song| song.id.clone()).collect(),
+                )
+                .expect("Error");
+
+            for r in creation_response {
+                println!("{:?}", &r.status());
+            }
+        }
         _ => (),
     }
-    // TODO: CREATE APPLE MUSIC PLAYLIST WITH NAME AND SONGS IN THE SAME CALL
 }
 
 fn main() {

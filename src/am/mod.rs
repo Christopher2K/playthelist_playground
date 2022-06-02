@@ -1,17 +1,18 @@
 use common::*;
 use model::*;
+use request::*;
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderName, AUTHORIZATION};
 use response::*;
 use std::collections::HashMap;
 use std::str::FromStr;
-use urlencoding::encode;
 
 pub mod common;
 pub mod constant;
 pub mod domain;
 pub mod model;
 pub mod relationship;
+pub mod request;
 pub mod response;
 
 pub struct AppleMusicAPI {
@@ -110,8 +111,78 @@ impl AppleMusicAPI {
             .and_then(|response| response.json())
     }
 
-    pub fn create_new_playlist(name: &str) -> Result<&str, reqwest::Error> {
-        todo!();
+    pub fn create_new_playlist(
+        &self,
+        name: &str,
+        tracks_id: Vec<String>,
+    ) -> Result<Vec<reqwest::blocking::Response>, reqwest::Error> {
+        let url = format!("{}/me/library/playlists", Self::BASE_URL);
+        let headers = self.get_base_headers();
+        let (first_track, other_tracks) = tracks_id.split_first().unwrap();
+
+        let body = LibraryPlaylistCreationRequest {
+            attributes: LibraryPlaylistCreationAttributes {
+                name: String::from(name),
+            },
+            relationships: Some(LibraryPlaylistCreationRelationships {
+                tracks: LibraryPlaylistCreationTracks {
+                    data: vec![LibraryPlaylistCreationTrack {
+                        id: String::from(first_track),
+                        track_type: LibraryTrackType::Songs,
+                    }],
+                },
+            }),
+        };
+
+        let client = Client::new();
+        client
+            .post(url)
+            .headers(headers)
+            .json(&body)
+            .send()
+            .and_then(|response| response.json::<LibraryPlaylistsResponse>())
+            .and_then(|p| {
+                let new_playlist = &p.data[0];
+                self.add_tracks_to_playlist(&new_playlist.id, other_tracks)
+            })
+    }
+
+    fn add_tracks_to_playlist(
+        &self,
+        playlist_id: &str,
+        tracks: &[String],
+    ) -> Result<Vec<reqwest::blocking::Response>, reqwest::Error> {
+        let url = format!(
+            "{}/me/library/playlists/{}/tracks",
+            Self::BASE_URL,
+            playlist_id
+        );
+        let headers = self.get_base_headers();
+        let client = Client::new();
+
+        // Split isrc list -> Want to have 100 items per chunks
+        tracks
+            .chunks(100)
+            .map(|tracks_chunk| {
+                let data = LibraryPlaylistCreationTracks {
+                    data: tracks_chunk
+                        .iter()
+                        .map(|id| LibraryPlaylistCreationTrack {
+                            id: String::from(id),
+                            track_type: LibraryTrackType::Songs,
+                        })
+                        .collect(),
+                };
+
+                println!("{}", serde_json::to_string_pretty(&data).unwrap());
+
+                client
+                    .post(&url)
+                    .headers(headers.clone())
+                    .json(&data)
+                    .send()
+            })
+            .collect::<_>()
     }
 
     // PRIVATE STUFFS
